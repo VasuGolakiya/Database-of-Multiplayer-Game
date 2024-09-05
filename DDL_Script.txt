@@ -1,0 +1,209 @@
+CREATE table Region (
+	server_location varchar(30) not null,
+	region_name varchar(30) not null,
+	primary key(server_location)
+);
+
+CREATE TABLE Account (
+    	PlayerID int NOT NULL,
+    	Email varchar(50) NOT NULL,
+    	VP int NOT NULL,
+    	RP int NOT NULL,
+    	Creation_date date NOT NULL,
+    	ingame_name varchar(30) NOT NULL,
+    	tagline int NOT NULL,
+    	account_level int NOT NULL,
+	account_xp int NOT NULL,
+	user_name varchar(30) NOT NULL,
+	DOB date NOT NULL,
+	password varchar(30) NOT NULL,
+	server_location varchar(30) NOT NULL,
+	PRIMARY KEY (PlayerID, Email),
+    	FOREIGN KEY (server_location) REFERENCES Region(server_location)
+);
+
+CREATE TABLE Friend (
+    	PlayerID int NOT NULL,
+    	Email varchar(50) NOT NULL,
+	FriendID int not null,
+	FEmail varchar(50) not null,
+	PRIMARY KEY (PlayerID, Email,FriendID,FEmail),
+    	FOREIGN KEY (PlayerID,Email) REFERENCES account(PlayerID,Email),
+	FOREIGN KEY (FriendID,FEmail) REFERENCES account(PlayerID,Email)
+);
+
+CREATE TABLE weapon (
+    	weapon_name varchar(30) NOT NULL,
+    	weapon_type varchar(30) NOT NULL,
+	weapon_price int NOT NULL,
+    	magazine_size int not null,
+	firerate decimal(5,2) not null,
+	PRIMARY KEY (weapon_name)
+);
+
+CREATE TABLE weapon_damage (
+    	weapon_name varchar(30) NOT NULL,
+    	range varchar(30) NOT NULL,
+	headshot_damage int not null,
+	bodyshot_damage int not null,
+	legshot_damage int not null,
+	PRIMARY KEY (weapon_name,range),
+	FOREIGN KEY (weapon_name) references weapon(weapon_name)
+);
+
+CREATE TABLE skin_data (
+	skin_name varchar(30) not null,
+	skin_tier varchar(30) not null,
+	PRIMARY KEY (skin_name)
+);
+
+CREATE TABLE skin (
+    	weapon_name varchar(30) NOT NULL,
+	skin_name varchar(30) not null,
+	skin_price int not null,
+	PRIMARY KEY (weapon_name,skin_name),
+	FOREIGN KEY (weapon_name) references weapon(weapon_name),
+	FOREIGN KEY (skin_name) references skin_data(skin_name)
+);
+
+CREATE TABLE player_skin (
+	PlayerID int not null,
+	Email varchar(50) not null,
+    	weapon_name varchar(30) NOT NULL,
+	skin_name varchar(30) not null,
+	PRIMARY KEY (playerid,email,weapon_name,skin_name),
+	FOREIGN KEY (playerid,email) references account(playerid,email),
+	FOREIGN KEY (weapon_name,skin_name) references skin(weapon_name,skin_name)
+);
+
+CREATE TABLE system_rank (
+	rank_name varchar(30) not null,
+	min_rating_req int not null,
+	PRIMARY KEY (rank_name)
+);
+
+CREATE TABLE player_rank (
+	PlayerID int not null,
+	Email varchar(50) not null,
+    	episode int not null,
+	rank_name varchar(30) not null,
+	rank_rating int not null,
+	total_rating int not null,
+	PRIMARY KEY (playerid,email,episode),
+	FOREIGN KEY (playerid,email) references account(playerid,email),
+	FOREIGN KEY (rank_name) references system_rank(rank_name)
+);
+
+CREATE TABLE map (
+	map_name varchar(50) not null,
+	map_description varchar(200) not null,
+	PRIMARY KEY (map_name)
+);
+
+CREATE TABLE game_mode (
+	game_mode_name varchar(50) not null,
+	game_mode_description varchar(200) not null,
+	PRIMARY KEY (game_mode_name)
+);
+
+CREATE TABLE match (
+	matchid int not null,
+	match_date date not null,
+    	start_time time not null,
+	match_length_minutes int not null,
+	map_name varchar(50) not null,
+	game_mode_name varchar(50) not null,
+	PRIMARY KEY (matchid),
+	FOREIGN KEY (map_name) references map(map_name),
+	FOREIGN KEY (game_mode_name) references game_mode(game_mode_name)
+);
+
+CREATE TABLE round (
+	roundid int not null,
+	matchid int not null,
+	roundno int not null,
+    	round_start_time time not null,
+	round_end_time time not null,
+	PRIMARY KEY (roundid,matchid),
+	FOREIGN KEY (matchid) references match(matchid)
+);
+
+CREATE TABLE events (
+	eventid int not null,
+	event_name varchar(30) not null,
+	event_description varchar(200) not null,
+	PRIMARY KEY (eventid)
+);
+
+CREATE TABLE team (
+	teamid int not null,
+	team_description varchar(200) not null,
+	PRIMARY KEY (teamid)
+);
+
+CREATE TABLE team_stats (
+	teamid int not null,
+	matchid int not null,
+	plants int not null,
+    	diffuses int not null,
+	first_bloods int not null,
+	rounds_won int not null,
+	rounds_lost int not null,
+	PRIMARY KEY (teamid,matchid),
+	FOREIGN KEY (matchid) references match(matchid),
+	FOREIGN KEY (teamid) references team(teamid)
+);
+
+
+CREATE TABLE round_wise_weapon_stats (
+	PlayerID int not null,
+	Email varchar(50) not null,
+	matchid int not null,
+	roundid int not null,
+	eventid int not null,
+	weapon_name varchar(30) not null,
+	kills int not null,
+	assists int not null,
+	score int not null,
+	economical_rating int not null,
+	result varchar(30) not null,
+	PRIMARY KEY (playerid,email,matchid,roundid,eventid),
+	FOREIGN KEY (playerid,email) references account(playerid,email),
+	FOREIGN KEY (weapon_name) references weapon(weapon_name),
+	FOREIGN KEY (eventid) references events(eventid),
+	FOREIGN KEY (roundid,matchid) references round(roundid,matchid)
+);
+
+CREATE TABLE ability (
+	ability_name varchar(30) not null,
+	ability_description varchar(200) not null,
+	max_no_of_abilities_per_round varchar(20) not null,
+	ability_price int not null,
+	agent_name varchar(30) not null,
+	PRIMARY KEY (ability_name)
+);
+
+
+CREATE TABLE agent (
+	agent_name varchar(30) not null,
+	agent_role varchar(30) not null,
+	PRIMARY KEY (agent_name)
+);
+
+CREATE TABLE player_match_stats (
+	PlayerID int not null,
+	Email varchar(50) not null,
+	matchid int not null,
+	is_winner varchar(30) not null,
+	kills int not null,
+	deaths int not null,
+	assists int not null,
+	mvp varchar(30) not null,
+	teamid int not null,
+	agent_name varchar(30) not null,
+	PRIMARY KEY (playerid,email,matchid),
+	FOREIGN KEY (playerid,email) references account(playerid,email),
+	FOREIGN KEY (matchid) references match(matchid),
+	FOREIGN KEY (agent_name) references agent(agent_name),
+	FOREIGN KEY (teamid) references team(teamid)
+); 

@@ -1,0 +1,112 @@
+1. list account(s) (playerid, email) which has played all the game mode.
+-> set search_path to valorant;
+   select distinct playerid,email from (select * from player_match_stats natural join match) as a 
+   where playerid not in (
+   select playerid from (
+   (select playerid, game_mode_name from (select game_mode_name from game_mode) as p cross join
+   (select distinct playerid from (select * from player_match_stats natural join match) as a) as sp)
+   except
+   (select playerid, game_mode_name from (select * from player_match_stats natural join match) as a)) as r);
+
+
+2. list account (playerid, email) of the friend of every player who have the highest rank in current episode(episode=5). 
+-> SELECT f.playerid,friend.email,f.friendid,friend.femail,f.total_rating 
+   FROM friend NATURAL JOIN(SELECT e.playerid,e.friendid,e.total_rating 
+   FROM ((SELECT friend.playerid,friend.friendid,a.total_rating FROM friend 
+   JOIN (SELECT * FROM player_rank WHERE episode=5) as a ON (friend.friendid=a.playerid)) as c
+   JOIN (SELECT b.playerid as z,max(b.total_rating) FROM (SELECT friend.playerid,friend.friendid,a.total_rating FROM friend 
+   JOIN (SELECT * FROM player_rank WHERE episode=5) as a ON (friend.friendid=a.playerid)) as b
+   GROUP BY b.playerid)as d
+   ON (c.playerid=d.z and c.total_rating=d.max)) as e) as f;
+
+
+3. list agent wise pick percentage.
+-> select agent_name, (100.0*count(agent_name))/(select count(*) from player_match_stats) as Agent_pick_percentage 
+   from player_match_stats group by agent_name;
+
+
+4. list weapon name which can kill a player (health=150) using maximum 2 bullets in range=(30-50).
+-> select weapon_name from weapon_damage 
+   where range like '%-50' and headshot_damage>=75;
+
+
+5. list account(s) (playerid, email) which has played game_mode_name=Competitive but not game_mode_name=Unrated.
+-> select playerid, email from match natural join player_match_stats where game_mode_name='Competitive' and 
+   (playerid, email) not in
+   (select playerid,email from match natural join player_match_stats where game_mode_name='Unrated');
+
+
+6. list account(s) (playerid, email) which has assisted other players the most (for all matches). 
+-> select playerid, email, matchid, assists from
+   (select matchid, max(assists) as assists from player_match_stats group by matchid) as r 
+   natural join player_match_stats ;
+
+
+7. list account(s) (playerid, email) and rank name (episode=5) which has clutched (eventid=1) in a round using Vandal gun.
+-> select playerid, email, rank_name from player_rank natural join
+   (select playerid, email from round_wise_weapon_stats where eventid=1 and weapon_name='Vandal') as r 
+   where episode=5;
+
+
+8. list oldest account(s) (playerid, email) and creation date.
+-> select playerid, email, creation_date
+   from account
+   where creation_date = (select min(creation_date) from account);
+
+
+9. list all account(s) (playerid, email) and weapon_name, weapon type which has killed at least one player using shot gun or sniper.
+-> select distinct playerid, email, weapon_name, weapon_type from round_wise_weapon_stats natural join weapon 
+   where (weapon_type='Shotgun' or weapon_type='Sniper Rifle') and kills>0;
+
+
+10.list account(s) (playerid, email) of players who is/was a radiant and is associated with flawless event (eventid=3).
+-> select distinct playerid, email from round_wise_weapon_stats 
+   where eventid=3 and playerid in (select distinct playerid from player_rank where rank_name='radiant');
+
+
+11.list account(s) (playerid, email) which has played at least 3 matches.
+-> select playerid, email from
+   (select playerid, email, count(matchid) as cnt from player_match_stats group by playerid, email) as r where cnt>=3;
+
+
+12.list top 3 accounts (playerid, email) and K/D ratio from each match having highest K/D ratio.
+-> select playerid, email, (1.0*kills)/(1.0*deaths)  as KD from player_match_stats order by kd desc limit 3;
+
+
+13.list (agent name, average ability cost) whose average ability cost is the most (descending).
+-> select agent_name, avg(ability_price) as average_ability_cost from agent natural join ability 
+   group by agent_name order by average_ability_cost desc;
+
+
+14.list match wise player numbers which belongs to mumbai server location.
+-> select matchid, count(playerid) from player_match_stats natural join
+   (select distinct playerid, email, server_location from account where server_location='Mumbai') as r group by matchid;
+
+
+15.list account(s) (playerid, email) , matchid and agent name which have taken Ace.
+-> select playerid, email, matchid, agent_name from player_match_stats
+   natural join (select playerid, email, matchid from round_wise_weapon_stats  where eventid=2) as r;
+
+
+16.list an account (playerid, email) which has maximum average economical rating.
+-> select playerid, email, avg(economical_rating) from round_wise_weapon_stats 
+   group by playerid, email order by avg desc limit 1;
+
+
+17.list top 3 account(s) (playerid, email) which has spend most valorant points.
+-> select playerid, email, sum(skin_price) from player_skin natural join skin 
+   group by playerid, email order by sum desc limit 3;
+
+
+18.list (weapon name, skin name) which is not associated with any player.
+-> select weapon_name, skin_name from skin except 
+   (select weapon_name, skin_name from player_skin); 
+
+
+19.list account(s) (playerid, email) of a particular round in a particular match in which no event has occured (eventid=7).
+-> select  playerid, email, matchid, roundid from round_wise_weapon_stats where eventid=7;
+
+
+20.list number of times a particular game mode has been played.
+-> select game_mode_name, count(matchid) from match 
+   group by game_mode_name;
